@@ -705,7 +705,7 @@ M.get_build = function()
 	return {
 		points = points,
 		name = build.buildName,
-		file = opt(build.dbFileName),
+		file = type(build.dbFileName) == "string" and build.dbFileName or null,
 		level = build.characterLevel,
 		levelAuto = build.characterLevelAutoMode == true,
 		classId = spec.curClassId,

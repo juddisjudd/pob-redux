@@ -104,4 +104,4 @@ jobs:
         run: cargo check --workspace --all-targets
 
       - name: Test
-        run: cargo test -p pob-redux --lib
+        run: cargo test -p pob-redux --lib && cargo test -p pob-engine
