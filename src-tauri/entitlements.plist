@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- PoB's calculations run under LuaJIT, whose trace compiler writes and
+	     then executes native arm64 code at runtime. Under the hardened runtime
+	     (required for notarization) that needs an explicit JIT entitlement;
+	     without it the app launches and then dies the first time a Lua loop
+	     goes hot, which is every recalculation. LuaJIT maps its code pages
+	     with MAP_JIT, so allow-jit is the correct and narrowest option --
+	     allow-unsigned-executable-memory is not needed and is weaker. -->
+	<key>com.apple.security.cs.allow-jit</key>
+	<true/>
+</dict>
+</plist>

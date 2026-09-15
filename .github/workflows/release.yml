@@ -26,6 +26,11 @@ jobs:
             bundles: nsis
           - os: ubuntu-22.04
             bundles: deb,appimage
+          # macos-15 is an Apple Silicon runner, so this builds arm64 only --
+          # the Intel half of a universal binary would need a second LuaJIT
+          # build and nobody has asked for it.
+          - os: macos-15
+            bundles: app,dmg
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v7

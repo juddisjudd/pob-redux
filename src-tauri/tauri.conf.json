@@ -35,7 +35,7 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["nsis", "deb", "appimage"],
+    "targets": ["nsis", "deb", "appimage", "app", "dmg"],
     "createUpdaterArtifacts": true,
     "shortDescription": "Path of Building for Path of Exile 1 and 2, rebuilt.",
     "longDescription": "A fast, modern desktop build planner for Path of Exile 1 and 2 that runs Path of Building Community's real calculation engines.",
@@ -59,6 +59,10 @@
     },
     "linux": {
       "appimage": { "bundleMediaFramework": false }
+    },
+    "macOS": {
+      "minimumSystemVersion": "11.0",
+      "entitlements": "entitlements.plist"
     }
   }
 }
