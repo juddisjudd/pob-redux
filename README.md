@@ -7,7 +7,7 @@
 [![Release build](https://img.shields.io/github/actions/workflow/status/juddisjudd/pob-redux/release.yml?style=flat-square&label=release%20build)](../../actions/workflows/release.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-2a2a30?style=flat-square)](LICENSE)
 [![Last commit](https://img.shields.io/github/last-commit/juddisjudd/pob-redux?style=flat-square)](../../commits/main)
-![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux-2a2a30?style=flat-square)
+![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-2a2a30?style=flat-square)
 ![Built with Tauri](https://img.shields.io/badge/built%20with-Tauri%202%20%2B%20Svelte%205-2a2a30?style=flat-square)
 
 A modern Path of Building UI for Path of Exile 1 and 2, powered by the community projects. Pick a game
@@ -25,6 +25,9 @@ Your builds stay where Path of Building keeps them, in `Documents/Path of Buildi
 `Documents/Path of Building/Builds`, so both apps can open the same files.
 
 Windows is the current target. CI also builds Linux packages, but nobody has tested them yet.
+
+macOS builds run on Apple Silicon: take the `.dmg` and see [MACOS.md](MACOS.md). It is not
+signed or notarized yet, so Gatekeeper needs a right-click → Open on first launch.
 
 ## Features
 

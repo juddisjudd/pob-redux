@@ -14,7 +14,9 @@ You need:
 - Rust stable. On Windows, the MSVC toolchain. The first build compiles LuaJIT.
 - Bun 1.4 or newer. This is what CI uses.
 - Tauri's platform prerequisites. Windows: WebView2. Linux: `libwebkit2gtk-4.1-dev`,
-  `libappindicator3-dev`, `librsvg2-dev`, `patchelf`, `libssl-dev`.
+  `libappindicator3-dev`, `librsvg2-dev`, `patchelf`, `libssl-dev`. macOS: the Command Line Tools,
+  with the licence accepted (`sudo xcodebuild -license accept`); the system WKWebView needs nothing
+  installed. See [MACOS.md](MACOS.md).
 - A checkout of [PathOfBuilding-PoE2](https://github.com/PathOfBuildingCommunity/PathOfBuilding-PoE2)
   next to this repo, or `POB_SOURCE` set to its path.
 
