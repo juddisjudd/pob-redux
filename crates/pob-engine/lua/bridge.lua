@@ -1162,6 +1162,23 @@ M.get_tree_state = function()
 	for _, nodeId in ipairs(socketIds) do
 		local ok, _, jewel = pcall(build.itemsTab.GetSocketAndJewelForNodeID, build.itemsTab, nodeId)
 		if ok and jewel then
+			-- From Nothing's radius ring belongs on the keystones it names, not
+			-- on the socket (PassiveTreeView.drawJewelRadius). keystoneMap is
+			-- keyed by display name and its lowercase, which is the form the
+			-- parsed mod stores.
+			local fromNothing = null
+			local fnk = jewel.title == "From Nothing" and jewel.jewelData and jewel.jewelData.fromNothingKeystones or nil
+			if type(fnk) == "table" and next(fnk) then
+				local keystones = array({})
+				for keystoneName in pairs(fnk) do
+					local keystone = spec.tree.keystoneMap[keystoneName]
+					if keystone and keystone.x and keystone.y then keystones[#keystones + 1] = keystone.id end
+				end
+				if #keystones > 0 then
+					table.sort(keystones)
+					fromNothing = keystones
+				end
+			end
 			sockets[#sockets + 1] = {
 				nodeId = nodeId,
 				itemId = jewel.id,
@@ -1173,6 +1190,7 @@ M.get_tree_state = function()
 				radiusLabel = opt(jewel.jewelRadiusLabel),
 				-- Timeless-style jewels: which legion's ring pair to draw.
 				conqueror = opt(jewel.jewelData and jewel.jewelData.conqueredBy and jewel.jewelData.conqueredBy.conqueror and jewel.jewelData.conqueredBy.conqueror.type),
+				fromNothing = fromNothing,
 			}
 		end
 	end
@@ -1319,17 +1337,34 @@ M.alloc_trace = function(p)
 end
 
 -- Node ids inside one jewel radius of a socket (tree-space precomputed map).
+-- From Nothing reaches nodes in radius of the keystones it names instead of the
+-- socket itself (PassiveSpec:NodeInKeystoneRadius).
 M.socket_nodes = function(p)
 	ensureBuild()
 	local id = tonumber(p and p.id)
 	local ri = tonumber(p and p.radiusIndex)
-	local socket = build.spec.tree.sockets[id or -1]
+	local spec = build.spec
+	local socket = spec.tree.sockets[id or -1]
 	if not socket then error("unknown socket " .. tostring(p and p.id), 0) end
-	local ids = array({})
-	local map = socket.nodesInRadius and ri and socket.nodesInRadius[ri]
-	if map then
-		for nid in pairs(map) do ids[#ids + 1] = nid end
+	local set = {}
+	local ok, _, jewel = pcall(build.itemsTab.GetSocketAndJewelForNodeID, build.itemsTab, id)
+	local fnk = ok and jewel and jewel.title == "From Nothing" and jewel.jewelData and jewel.jewelData.fromNothingKeystones or nil
+	if type(fnk) == "table" and next(fnk) and ri then
+		for keystoneName in pairs(fnk) do
+			local keystone = spec.tree.keystoneMap[keystoneName]
+			local map = keystone and keystone.nodesInRadius and keystone.nodesInRadius[ri]
+			if map then
+				for nid in pairs(map) do set[nid] = true end
+			end
+		end
+	else
+		local map = socket.nodesInRadius and ri and socket.nodesInRadius[ri]
+		if map then
+			for nid in pairs(map) do set[nid] = true end
+		end
 	end
+	local ids = array({})
+	for nid in pairs(set) do ids[#ids + 1] = nid end
 	table.sort(ids)
 	return { id = id, radiusIndex = opt(ri), nodes = ids }
 end

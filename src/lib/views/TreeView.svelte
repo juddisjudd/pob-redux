@@ -922,6 +922,7 @@
     const { tx, ty, toScreen, inView } = viewMath(V);
     const A = assets;
     if (!model) return;
+    const M = model;
     // --- jewel radius rings ---
     const ring = (x: number, y: number, rad: JewelRadius, color: string, alpha: number, width: number) => {
       ctx.beginPath();
@@ -950,39 +951,66 @@
         ctx.restore();
         return ok;
       };
+      // From Nothing's ring sits on the keystones it names, not its socket
+      // (PassiveTreeView.drawJewelRadius); null means an ordinary jewel.
+      const fromNothingCenters = (j: SocketedJewel): { x: number; y: number }[] | null => {
+        if (!j.fromNothing?.length) return null;
+        const out: { x: number; y: number }[] = [];
+        for (const kid of j.fromNothing) {
+          const k = M.nodes.get(kid);
+          if (k) out.push({ x: k.x, y: k.y });
+        }
+        return out;
+      };
       for (const [nodeId, j] of S.sockets) {
         if (!j.radiusIndex || !S.alloc.has(nodeId) || S.hover?.id === nodeId) continue;
-        const n = model.nodes.get(nodeId);
         const rad = S.radii[j.radiusIndex - 1];
-        if (!n || !rad || !inView(n.x, n.y)) continue;
-        const sx = tx(n.x);
-        const sy = ty(n.y);
-        const outer = rad.outer * scale;
-        const inner = rad.inner * scale * 1.06;
-        const rings = timelessRings(j);
-        let drew: boolean;
-        if (rings) {
-          drew = spin(rings[0], sx, sy, outer, -0.7);
-          spin(rings[1], sx, sy, outer, 0.7);
-        } else if (A?.has("ShadedOuterRing")) {
-          drew = spin("ShadedOuterRing", sx, sy, outer, -0.7);
-          spin("ShadedOuterRingFlipped", sx, sy, outer, 0.7);
-          spin("ShadedInnerRing", sx, sy, inner, -0.7);
-          spin("ShadedInnerRingFlipped", sx, sy, inner, 0.7);
-        } else {
-          drew = false;
+        if (!rad) continue;
+        let centers = fromNothingCenters(j);
+        if (!centers) {
+          const n = model.nodes.get(nodeId);
+          if (!n) continue;
+          centers = [n];
         }
-        if (drew) spinning = true;
-        else ring(sx, sy, rad, "#e6e6ea", 0.25, 1);
+        // From Nothing's inner edge is a fixed 150 tree units, without the
+        // 1.06 stretch other jewels' inner rings get.
+        const inner = (j.fromNothing?.length ? 150 : rad.inner * 1.06) * scale;
+        const radius = j.fromNothing?.length ? { ...rad, inner: 150 } : rad;
+        const rings = timelessRings(j);
+        for (const c of centers) {
+          if (!inView(c.x, c.y)) continue;
+          const sx = tx(c.x);
+          const sy = ty(c.y);
+          const outer = rad.outer * scale;
+          let drew: boolean;
+          if (rings) {
+            drew = spin(rings[0], sx, sy, outer, -0.7);
+            spin(rings[1], sx, sy, outer, 0.7);
+          } else if (A?.has("ShadedOuterRing")) {
+            drew = spin("ShadedOuterRing", sx, sy, outer, -0.7);
+            spin("ShadedOuterRingFlipped", sx, sy, outer, 0.7);
+            spin("ShadedInnerRing", sx, sy, inner, -0.7);
+            spin("ShadedInnerRingFlipped", sx, sy, inner, 0.7);
+          } else {
+            drew = false;
+          }
+          if (drew) spinning = true;
+          else ring(sx, sy, radius, "#e6e6ea", 0.25, 1);
+        }
       }
       // Hovered socket: the socketed jewel's radius, or every radius when empty.
       if (S.hover?.kind === "socket") {
-        const [sx, sy] = toScreen(S.hover.x, S.hover.y);
         const socketed = S.sockets.get(S.hover.id);
         const own = socketed?.radiusIndex ? S.radii[socketed.radiusIndex - 1] : null;
         if (own) {
-          ring(sx, sy, own, pobColor(own.color), 0.9, 1.5);
+          const centers = fromNothingCenters(socketed!) ?? [{ x: S.hover.x, y: S.hover.y }];
+          const rad = socketed!.fromNothing?.length ? { ...own, inner: 150 } : own;
+          for (const c of centers) {
+            const [cx, cy] = toScreen(c.x, c.y);
+            ring(cx, cy, rad, pobColor(own.color), 0.9, 1.5);
+          }
         } else {
+          const [sx, sy] = toScreen(S.hover.x, S.hover.y);
           const variable = socketed?.radiusLabel === "Variable";
           for (const r of S.radii) {
             if (variable ? r.inner === 0 : r.inner !== 0) continue;

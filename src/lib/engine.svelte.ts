@@ -343,6 +343,8 @@ export interface SocketedJewel {
   radiusLabel: string | null;
   /** Legion of a timeless-style jewel (vaal, karui, ...), which picks its ring art. */
   conqueror: string | null;
+  /** From Nothing: keystone node ids its radius is centred on, instead of the socket. */
+  fromNothing: number[] | null;
 }
 
 export interface NodeOverride {
