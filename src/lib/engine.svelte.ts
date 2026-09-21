@@ -643,6 +643,8 @@ export interface GemInfo {
   support: boolean;
   /** PoB colour escape for the gem name (Str/Dex/Int). */
   color: string | null;
+  /** Physical socket colour from PoB's gem data. */
+  socketColour?: string | null;
   count: number | null;
   errMsg: string | null;
   /** Set when the game hands the skill out (a weapon's default attack, Raise Shield, a unique's skill): says what it comes with. */
@@ -926,6 +928,8 @@ export interface ItemInfo {
   itemLevel: number | null;
   primarySlot: string | null;
   equippedSlot: string | null;
+  sockets?: ItemSocket[];
+  runes?: string[];
 }
 
 export interface ItemDbRow {
