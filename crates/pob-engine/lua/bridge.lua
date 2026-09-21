@@ -3969,6 +3969,7 @@ M.item_tooltip = function(p)
 	end
 	r.lines = kept
 	r.rarity = opt(item.rarity)
+	r.itemArt = { game = GAME, name = opt(item.title or item.name), baseName = opt(item.baseName), rarity = opt(item.rarity) }
 	return r
 end
 

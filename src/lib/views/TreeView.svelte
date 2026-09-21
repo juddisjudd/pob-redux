@@ -2012,7 +2012,7 @@
         {@const r = wrap?.getBoundingClientRect()}
         {@const tipLeft = Math.min(mouse.x + 18, w - 340)}
         {@const beside = tipLeft + 332 + 460 <= w ? tipLeft + 332 : Math.max(8, tipLeft - 8 - 460)}
-        <PobTooltip lines={jewelTip.lines} header={jewelTip.header} x={(r?.left ?? 0) + beside} y={(r?.top ?? 0) + Math.min(mouse.y + 18, h - 60)} />
+        <PobTooltip lines={jewelTip.lines} header={jewelTip.header} itemArt={jewelTip.itemArt} x={(r?.left ?? 0) + beside} y={(r?.top ?? 0) + Math.min(mouse.y + 18, h - 60)} />
       {/if}
     {/if}
   </div>

@@ -763,6 +763,7 @@ export interface Tooltip {
   header: TooltipHeader;
   runic: boolean;
   uniqueGem: boolean;
+  itemArt?: { game: "poe1" | "poe2"; name: string | null; baseName: string | null; rarity: string | null };
 }
 
 export type GemKind = "skill" | "spirit" | "support";
