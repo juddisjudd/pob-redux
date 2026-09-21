@@ -924,6 +924,7 @@ export interface ItemInfo {
   quality: number | null;
   itemLevel: number | null;
   primarySlot: string | null;
+  compatibleSlots: string[];
   equippedSlot: string | null;
 }
 

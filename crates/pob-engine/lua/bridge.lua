@@ -2664,6 +2664,12 @@ M.get_items = function()
 			local s = itemSummary(item)
 			local ok, slot = pcall(item.GetPrimarySlot, item)
 			s.primarySlot = ok and opt(slot) or null
+			s.compatibleSlots = array({})
+			for _, candidate in ipairs(build.itemsTab.orderedSlots) do
+				if build.itemsTab:IsItemValidForSlot(item, candidate.slotName) then
+					s.compatibleSlots[#s.compatibleSlots + 1] = candidate.slotName
+				end
+			end
 			-- Returns the slot control object; only its name is serialisable.
 			local ok2, equipped = pcall(build.itemsTab.GetEquippedSlotForItem, build.itemsTab, item)
 			s.equippedSlot = (ok2 and type(equipped) == "table" and opt(equipped.slotName)) or null

@@ -428,7 +428,7 @@
     <span class="sname">{s.label ?? s.slot}</span>
     <select class="select" value={s.itemId} onchange={(e) => equipSlot(s.slot, e)} disabled={build.busy > 0} style:color={rarityColor[s.itemRarity ?? ""] ?? undefined}>
       <option value={0}>—</option>
-      {#each items as it}
+      {#each items.filter((it) => it.compatibleSlots.includes(s.slot)) as it}
         <option value={it.id}>{it.name}</option>
       {/each}
     </select>
