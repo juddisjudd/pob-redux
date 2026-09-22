@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { TooltipHeader, TooltipLine } from "$lib/engine.svelte";
+  import type { Tooltip, TooltipHeader, TooltipLine } from "$lib/engine.svelte";
   import ItemFrame from "./ItemFrame.svelte";
   import PobText from "./PobText.svelte";
 
@@ -8,10 +8,11 @@
     header = null,
     runic = false,
     uniqueGem = false,
+    itemArt,
     x,
     y,
     width = 540,
-  }: { lines: TooltipLine[]; header?: TooltipHeader; runic?: boolean; uniqueGem?: boolean; x: number; y: number; width?: number } = $props();
+  }: { lines: TooltipLine[]; header?: TooltipHeader; runic?: boolean; uniqueGem?: boolean; itemArt?: Tooltip["itemArt"]; x: number; y: number; width?: number } = $props();
 
   // Placed at the pointer, then slid up and left as far as needed to stay on
   // screen once its size is known.
@@ -20,10 +21,19 @@
   let top = $state(0);
   $effect(() => {
     lines;
-    const h = el?.offsetHeight ?? 0;
-    const w = el?.offsetWidth ?? 0;
-    top = Math.max(8, Math.min(y, window.innerHeight - h - 8));
-    left = Math.max(8, Math.min(x, window.innerWidth - w - 8));
+    const anchorX = x;
+    const anchorY = y;
+    const node = el;
+    if (!node) return;
+    const place = () => {
+      top = Math.max(8, Math.min(anchorY, window.innerHeight - node.offsetHeight - 8));
+      left = Math.max(8, Math.min(anchorX, window.innerWidth - node.offsetWidth - 8));
+    };
+    place();
+    const observer = new ResizeObserver(place);
+    observer.observe(node);
+    window.addEventListener("resize", place);
+    return () => { observer.disconnect(); window.removeEventListener("resize", place); };
   });
 
   function style(l: TooltipLine): string {
@@ -35,7 +45,7 @@
 
 {#if header}
   <div class="game" bind:this={el} style:left={`${left}px`} style:top={`${top}px`} style:max-width={`${width}px`}>
-    <ItemFrame {lines} {header} {runic} {uniqueGem} />
+    <ItemFrame {lines} {header} {runic} {uniqueGem} {itemArt} />
   </div>
 {:else}
   <div class="ptt" bind:this={el} style:left={`${left}px`} style:top={`${top}px`} style:width={`${width}px`}>

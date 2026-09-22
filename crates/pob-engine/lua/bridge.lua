@@ -2600,11 +2600,20 @@ local function variantNamesOf(item, limit)
 end
 
 local function itemSummary(item)
+	local sockets, runes = array({}), array({})
+	for _, sock in ipairs(item.sockets or {}) do
+		if sock.color then sockets[#sockets + 1] = { colour = sock.color, group = sock.group or 0 } end
+	end
+	for i = 1, item.itemSocketCount or 0 do
+		runes[i] = item.runes and item.runes[i] or "None"
+	end
 	return {
 		id = item.id,
 		name = item.name,
 		title = opt(item.title),
 		baseName = opt(item.baseName),
+		sockets = sockets,
+		runes = runes,
 		type = opt(item.type),
 		rarity = opt(item.rarity),
 		raw = item.raw,
@@ -2975,6 +2984,7 @@ M.get_skills = function()
 				enabled = gem.enabled ~= false,
 				support = (gd and gd.grantedEffect and gd.grantedEffect.support) and true or false,
 				color = opt(gem.color),
+				socketColour = opt(gd and gd.grantedEffect and ({ "R", "G", "B", "W" })[gd.grantedEffect.color]),
 				count = opt(gem.count),
 				errMsg = opt(gem.errMsg),
 				-- Set for skills the game grants (default weapon attacks, Raise
@@ -3981,6 +3991,7 @@ M.item_tooltip = function(p)
 	end
 	r.lines = kept
 	r.rarity = opt(item.rarity)
+	r.itemArt = { game = GAME, name = opt(item.title or item.name), baseName = opt(item.baseName), rarity = opt(item.rarity) }
 	return r
 end
 

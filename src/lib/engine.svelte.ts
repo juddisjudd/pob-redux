@@ -644,6 +644,8 @@ export interface GemInfo {
   support: boolean;
   /** PoB colour escape for the gem name (Str/Dex/Int). */
   color: string | null;
+  /** Physical socket colour from PoB's gem data. */
+  socketColour?: string | null;
   count: number | null;
   errMsg: string | null;
   /** Set when the game hands the skill out (a weapon's default attack, Raise Shield, a unique's skill): says what it comes with. */
@@ -764,6 +766,7 @@ export interface Tooltip {
   header: TooltipHeader;
   runic: boolean;
   uniqueGem: boolean;
+  itemArt?: { game: "poe1" | "poe2"; name: string | null; baseName: string | null; rarity: string | null };
 }
 
 export type GemKind = "skill" | "spirit" | "support";
@@ -927,6 +930,8 @@ export interface ItemInfo {
   primarySlot: string | null;
   compatibleSlots: string[];
   equippedSlot: string | null;
+  sockets?: ItemSocket[];
+  runes?: string[];
 }
 
 export interface ItemDbRow {

@@ -1,6 +1,8 @@
 <script lang="ts">
   import { convertFileSrc } from "@tauri-apps/api/core";
-  import type { TooltipHeader, TooltipLine } from "$lib/engine.svelte";
+  import type { Tooltip, TooltipHeader, TooltipLine } from "$lib/engine.svelte";
+  import { game } from "$lib/state/game.svelte";
+  import ItemArt from "./ItemArt.svelte";
   import PobText from "./PobText.svelte";
 
   let {
@@ -8,7 +10,8 @@
     header,
     runic = false,
     uniqueGem = false,
-  }: { lines: TooltipLine[]; header: NonNullable<TooltipHeader>; runic?: boolean; uniqueGem?: boolean } = $props();
+    itemArt,
+  }: { lines: TooltipLine[]; header: NonNullable<TooltipHeader>; runic?: boolean; uniqueGem?: boolean; itemArt?: Tooltip["itemArt"] } = $props();
 
   // PoB's Tooltip class: header art sizes and the rarity each one frames.
   const ITEM_HEADERS: Record<string, { art: string; height: number; side: number; textY: number; color: string }> = {
@@ -17,19 +20,22 @@
     RELIC: { art: "foil", height: 58, side: 47, textY: 4, color: "var(--c-rare)" },
     MAGIC: { art: "magic", height: 38, side: 32, textY: 6, color: "var(--c-magic)" },
     NORMAL: { art: "white", height: 38, side: 32, textY: 6, color: "var(--c-normal)" },
+    GEM: { art: "gem", height: 38, side: 33, textY: 5, color: "var(--c-gem)" },
   };
 
   const asset = (name: string) => `url("${convertFileSrc(`Assets/${name}`, "pobasset")}")`;
 
   const gem = $derived(header === "GEM");
-  const hdr = $derived(gem ? null : (ITEM_HEADERS[header] ?? ITEM_HEADERS.NORMAL));
+  const poe2Gem = $derived(gem && game.isPoe2);
+  const hdr = $derived(ITEM_HEADERS[header] ?? ITEM_HEADERS.NORMAL);
   const sepArt = $derived(asset(`itemsseparator${gem ? "gem" : hdr!.art}.png`));
   const frameColor = $derived(gem ? "var(--c-gem)" : hdr!.color);
 
   const headerStyle = $derived.by(() => {
-    if (gem) return `background-image:${asset(uniqueGem ? "gemhovertitleunique.png" : "gemhovertitle.png")};background-size:auto 59px;background-repeat:no-repeat;min-height:59px`;
+    // PoE1 uses the same three-piece frame as items; only PoE2 ships gemhovertitle.
+    if (poe2Gem) return `background-image:${asset(uniqueGem ? "gemhovertitleunique.png" : "gemhovertitle.png")};background-size:auto 59px;background-repeat:no-repeat;min-height:59px`;
     const h = hdr!;
-    const prefix = runic ? "runicitemsheader" : "itemsheader";
+    const prefix = runic && !gem ? "runicitemsheader" : "itemsheader";
     const sz = `${h.side}px ${h.height}px`;
     return [
       `background-image:${asset(`${prefix}${h.art}left.png`)},${asset(`${prefix}${h.art}right.png`)},${asset(`${prefix}${h.art}middle.png`)}`,
@@ -48,20 +54,26 @@
     let i = 0;
     while (i < lines.length && !lines[i].sep) title.push(lines[i++]);
     if (i < lines.length && lines[i].sep) i++;
-    return { title, body: lines.slice(i) };
+    const body = lines.slice(i);
+    // The game-font description ends before PoB's comparison notes.
+    let artAfter = body.length - 1;
+    for (let j = body.length - 1; j >= 0; j--) {
+      if (body[j].font?.startsWith("FONTIN")) { artAfter = j; break; }
+    }
+    return { title, body, artAfter };
   });
 
   // PoB's sizes are for its own UI scale; the game font reads larger, so
   // the box is scaled down to sit with the rest of the app.
   function lineStyle(l: TooltipLine): string {
     const px = Math.round(l.size * 0.78);
-    const family = l.font === "FONTIN SC" ? "font-family:'Fontin SmallCaps',var(--font-ui)" : l.font === "FONTIN ITALIC" ? "font-style:italic" : "";
+    const family = l.font?.includes("ITALIC") ? "font-style:italic" : l.font === "FONTIN SC" ? "font-family:'Fontin SmallCaps',var(--font-ui)" : "";
     return `font-size:${px}px;line-height:${px + 4}px;${family}`;
   }
 </script>
 
 <div class="frame scope-dark" style:border-color={frameColor}>
-  <div class="head" class:gem style={headerStyle}>
+  <div class="head" class:gem={poe2Gem} style={headerStyle}>
     {#each split.title as l, i (i)}
       <div class="line" class:center={l.center} style={lineStyle(l)}><PobText text={l.text} /></div>
     {/each}
@@ -72,6 +84,9 @@
         <div class="sep" style:background-image={sepArt}></div>
       {:else}
         <div class="line" class:center={l.center} class:note={l.size <= 14} style={lineStyle(l)}><PobText text={l.text} /></div>
+      {/if}
+      {#if itemArt && i === split.artAfter}
+        <ItemArt item={itemArt} />
       {/if}
     {/each}
   </div>

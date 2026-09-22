@@ -15,6 +15,8 @@
     type TooltipLine,
   } from "$lib/engine.svelte";
   import { build } from "$lib/state/build.svelte";
+  import { game } from "$lib/state/game.svelte";
+  import EquipmentGrid from "$lib/components/EquipmentGrid.svelte";
   import PobText from "$lib/components/PobText.svelte";
   import { stripPobText } from "$lib/pobtext";
   import ItemCustomizationControls from "$lib/components/ItemCustomizationControls.svelte";
@@ -311,12 +313,15 @@
   $effect(() => {
     build.rev;
     tipCache.clear();
-    tip = null;
+    hideTip();
+    let live = true;
     Promise.all([engine.listSlots(), engine.getItems(), engine.listItemSets()]).then(([s, i, sets]) => {
+      if (!live) return;
       slotsResp = s;
       items = i.items;
       itemSets = sets.itemSets;
     });
+    return () => { live = false; };
   });
 
   $effect(() => {
@@ -380,11 +385,14 @@
 
   // Beside the hovered row rather than under the pointer, so the row's own
   // buttons and the rows below stay visible.
-  function showTip(e: MouseEvent, key: string, fetch: () => Promise<Tooltip>) {
+  let tipRequest = 0;
+  function showTip(e: MouseEvent | FocusEvent, key: string, fetch: () => Promise<Tooltip>) {
     clearTimeout(tipTimer);
+    const request = ++tipRequest;
+    tip = null;
     const row = (e.currentTarget as HTMLElement | null)?.getBoundingClientRect();
-    let x = Math.min(e.clientX + 16, window.innerWidth - 560);
-    let y = Math.min(e.clientY + 12, Math.max(window.innerHeight - 520, 40));
+    let x = Math.min(("clientX" in e ? e.clientX : 8) + 16, window.innerWidth - 560);
+    let y = Math.min(("clientY" in e ? e.clientY : 8) + 12, Math.max(window.innerHeight - 520, 40));
     if (row) {
       x = row.right + 8 + 540 <= window.innerWidth ? row.right + 8 : Math.max(8, row.left - 540 - 8);
       y = row.top;
@@ -397,14 +405,16 @@
       }
       try {
         const r = await fetch();
+        if (request !== tipRequest) return;
         tipCache.set(key, r);
         tip = { tt: r, x, y };
       } catch {
-        tip = null;
+        if (request === tipRequest) tip = null;
       }
     }, 120);
   }
   function hideTip() {
+    tipRequest++;
     clearTimeout(tipTimer);
     tip = null;
   }
@@ -516,6 +526,11 @@
     <section class="col slots">
       <div class="panel-head"><span class="label">{m.items_equipment()}</span></div>
       <div class="scroll">
+        <EquipmentGrid slots={slotsResp?.slots ?? []} {items} game={game.current} groups={build.skills?.socketGroups ?? []} {selectedItem}
+          onselect={(id) => { hideTip(); selectedItem = id; }}
+          onitemhover={(event, id) => showTip(event, `i${id}`, () => engine.itemTooltip({ itemId: id }))}
+          ongemhover={(event, group, gem) => showTip(event, `g${group}:${gem}`, () => engine.gemTooltip(group, gem))}
+          onleave={hideTip} />
         {#each gearSlots as s (s.slot)}
           {@render slotRow(s)}
         {/each}
@@ -629,7 +644,7 @@
         <div class="scroll detailpane">
           {#if detail.tt.header}
             <div class="ttbox">
-              <ItemFrame lines={detail.tt.lines} header={detail.tt.header} runic={detail.tt.runic} uniqueGem={detail.tt.uniqueGem} />
+              <ItemFrame lines={detail.tt.lines} header={detail.tt.header} runic={detail.tt.runic} uniqueGem={detail.tt.uniqueGem} itemArt={detail.tt.itemArt} />
             </div>
           {:else}
             <div class="ttbox plain">
@@ -775,7 +790,7 @@
   {/if}
 
   {#if tip}
-    <PobTooltip lines={tip.tt.lines} header={tip.tt.header} runic={tip.tt.runic} uniqueGem={tip.tt.uniqueGem} x={tip.x} y={tip.y} />
+    <PobTooltip lines={tip.tt.lines} header={tip.tt.header} runic={tip.tt.runic} uniqueGem={tip.tt.uniqueGem} itemArt={tip.tt.itemArt} x={tip.x} y={tip.y} />
   {/if}
 </div>
 

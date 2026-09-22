@@ -1158,5 +1158,9 @@
   "chat_output_limit": "The reply hit the model's output limit and was cut off.",
   "chat_content_filter": "The provider's content filter stopped the reply.",
   "chat_stopped_early": "The model stopped early ({reason}).",
-  "chat_paused_steps": "Paused after {steps} tool steps without finishing."
+  "chat_paused_steps": "Paused after {steps} tool steps without finishing.",
+  "items_empty_slot": "Empty",
+  "items_equipment_hint": "Hover to inspect · Click to edit",
+  "items_show_sockets": "Sockets & gems",
+  "items_assigned_gems": "Assigned gems"
 }
