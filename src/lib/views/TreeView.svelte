@@ -39,7 +39,10 @@
   // The socketed jewel's item tooltip, shown under the node tip while its socket is hovered.
   let jewelTip = $state<Tooltip | null>(null);
   let tipEl = $state<HTMLDivElement | null>(null);
+  let tipW = $state(320);
   let tipH = $state(0);
+  const jewelTipW = 540;
+  const tipGap = 12;
   const jewelTipCache = new Map<string, Tooltip>();
   $effect(() => {
     const h = hover;
@@ -112,10 +115,12 @@
       clearTimeout(timer);
     };
   });
-  // Measured after every content change, so a tall tip slides up rather than off the view.
+  // Measured after every content change, so the intrinsic-sized tip stays inside the view.
   $effect(() => {
     hover;
     statDiff;
+    w;
+    tipW = tipEl?.offsetWidth ?? 320;
     tipH = tipEl?.offsetHeight ?? 0;
   });
   let hoverPath = $state<Set<number>>(new Set());
@@ -123,6 +128,17 @@
   let hoverCost = $state<number | null>(null);
   let hoverBlocked = $state<string | null>(null);
   let mouse = $state({ x: 0, y: 0 });
+  const tipPlacement = $derived.by(() => {
+    const natural = Math.max(8, Math.min(mouse.x + 18, w - tipW - 8));
+    if (!jewelTip || tipW + tipGap + jewelTipW > w - 16) return { node: natural, jewel: 8, showJewel: false };
+
+    const pairW = tipW + tipGap + jewelTipW;
+    const jewelRightNode = Math.max(8, Math.min(natural, w - pairW - 8));
+    const jewelLeftNode = Math.max(8 + jewelTipW + tipGap, Math.min(natural, w - tipW - 8));
+    return Math.abs(jewelRightNode - natural) <= Math.abs(jewelLeftNode - natural)
+      ? { node: jewelRightNode, jewel: jewelRightNode + tipW + tipGap, showJewel: true }
+      : { node: jewelLeftNode, jewel: jewelLeftNode - tipGap - jewelTipW, showJewel: true };
+  });
   let search = $state("");
   let matches = $state<Set<number>>(new Set());
 
@@ -1954,7 +1970,7 @@
     {#if hover && !attrMenu && !masteryMenu}
       {@const ov = overrides[String(hover.id)]}
       {@const socketed = hover.kind === "socket" ? sockets.get(hover.id) : undefined}
-      <div class="tip" bind:this={tipEl} style:left={`${Math.min(mouse.x + 18, w - 340)}px`} style:top={`${Math.max(8, Math.min(mouse.y + 18, h - tipH - 8))}px`}>
+      <div class="tip" bind:this={tipEl} style:left={`${tipPlacement.node}px`} style:top={`${Math.max(8, Math.min(mouse.y + 18, h - tipH - 8))}px`}>
         <div class="tip-head">
           <span class="tip-name" class:key={hover.kind === "keystone"} class:notable={hover.kind === "notable"}>{ov?.name ?? hover.name}</span>
           <span class="label">{hover.asc ?? hover.kind}</span>
@@ -2008,11 +2024,9 @@
           <span class="dim">#{hover.id}</span>
         </div>
       </div>
-      {#if socketed && jewelTip}
+      {#if socketed && jewelTip && tipPlacement.showJewel}
         {@const r = wrap?.getBoundingClientRect()}
-        {@const tipLeft = Math.min(mouse.x + 18, w - 340)}
-        {@const beside = tipLeft + 332 + 460 <= w ? tipLeft + 332 : Math.max(8, tipLeft - 8 - 460)}
-        <PobTooltip lines={jewelTip.lines} header={jewelTip.header} itemArt={jewelTip.itemArt} x={(r?.left ?? 0) + beside} y={(r?.top ?? 0) + Math.min(mouse.y + 18, h - 60)} />
+        <PobTooltip lines={jewelTip.lines} header={jewelTip.header} itemArt={jewelTip.itemArt} x={(r?.left ?? 0) + tipPlacement.jewel} y={(r?.top ?? 0) + Math.min(mouse.y + 18, h - 60)} width={jewelTipW} />
       {/if}
     {/if}
   </div>
@@ -2345,7 +2359,9 @@
   }
   .tip {
     position: absolute;
-    width: 320px;
+    width: max-content;
+    min-width: min(320px, calc(100% - 16px));
+    max-width: calc(100% - 16px);
     max-height: calc(100% - 16px);
     overflow: hidden;
     padding: 10px 12px;
