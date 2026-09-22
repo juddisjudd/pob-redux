@@ -466,6 +466,9 @@ export function parseTree(version: string, json: string): TreeModel {
       if (a.hidden || b.hidden) continue;
       a.links.push(b.id);
       b.links.push(a.id);
+      // Masteries are logically linked to their wheel for allocation, but PoB
+      // deliberately leaves that link out of the rendered connectors.
+      if (a.kind === "mastery" || b.kind === "mastery") continue;
       if (a.asc !== b.asc) continue;
       if (a.classesStart || b.classesStart) continue;
       const key = a.id < b.id ? `${a.id}:${b.id}` : `${b.id}:${a.id}`;
