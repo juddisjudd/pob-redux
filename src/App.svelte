@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount, untrack } from "svelte";
   import TitleBar from "$lib/components/TitleBar.svelte";
   import Sidebar from "$lib/components/Sidebar.svelte";
   import StatusBar from "$lib/components/StatusBar.svelte";
@@ -18,6 +18,8 @@
   import ChatPanel from "$lib/components/ChatPanel.svelte";
   import UpdateBanner from "$lib/components/UpdateBanner.svelte";
   import logo from "$lib/assets/logo.png";
+  import { engine } from "$lib/engine.svelte";
+  import { prefetchArt } from "$lib/item-art";
   import { app } from "$lib/state/app.svelte";
   import { build } from "$lib/state/build.svelte";
   import { chat } from "$lib/state/chat.svelte";
@@ -34,6 +36,17 @@
     if (status && status.state !== "booting") return;
     const tick = window.setInterval(() => (bootDots = (bootDots + 1) % 4), 400);
     return () => clearInterval(tick);
+  });
+
+  $effect(() => {
+    if (build.info?.generation == null) return;
+    untrack(() => {
+      const current = game.current;
+      const gems = current === "poe1"
+        ? (build.skills?.socketGroups ?? []).flatMap((group) => group.gems).flatMap((gem) => (gem.name ? [{ name: gem.name, support: gem.support }] : []))
+        : [];
+      engine.getItems().then(({ items }) => prefetchArt(current, items, gems)).catch(() => {});
+    });
   });
 
   onMount(() => {

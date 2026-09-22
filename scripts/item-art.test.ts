@@ -1,52 +1,32 @@
 import { expect, test } from "bun:test";
-import { itemArtUrl } from "../src/lib/item-art";
+import { artPath, type ArtMap } from "../src/lib/item-art";
 
-test("PoE2 runic prefixes fall back to the underlying base or unique art", async () => {
-  const base = { game: "poe2" as const, name: "Storm Stride", baseName: "Dragonscale Boots", rarity: "RARE" };
-  const boots = await itemArtUrl(base);
-  expect(boots).toBeTruthy();
-  for (const prefix of ["Runeforged", "Runemastered"]) {
-    expect(await itemArtUrl({ ...base, baseName: `${prefix} Dragonscale Boots` })).toBe(boots);
-    expect(await itemArtUrl({ ...base, baseName: `${prefix} Dragonscale Boots (legacy)` })).toBe(boots);
-    const unique = { ...base, name: "Headhunter", baseName: "Heavy Belt", rarity: "UNIQUE" };
-    const art = await itemArtUrl(unique);
-    expect(art).toBeTruthy();
-    expect(await itemArtUrl({ ...unique, name: `${prefix} Headhunter`, baseName: `${prefix} Heavy Belt` })).toBe(art);
-    expect(await itemArtUrl({ ...base, name: "Unknown unique", rarity: "UNIQUE", baseName: `${prefix} Dragonscale Boots` })).toBe(boots);
-  }
-  expect(await itemArtUrl({ ...base, game: "poe1", baseName: "Runemastered Dragonscale Boots" })).toBeNull();
+const map = (game: ArtMap["game"], bases: Record<string, string>, uniques: Record<string, string> = {}): ArtMap =>
+  ({ game, version: "test", bases, uniques, sockets: {}, files: {} });
+
+const poe1 = map(
+  "poe1",
+  { "Leather Belt": "Art/Belt.webp", "Barrage": "Art/Barrage.webp", "Barrage Support": "Art/BarrageSupport.webp", "Spell Echo Support": "Art/SpellEcho.webp" },
+  { Headhunter: "Art/Headhunter.webp" },
+);
+const item = (name: string | null, baseName: string | null, rarity: string | null = null) => ({ game: "poe1" as const, name, baseName, rarity });
+
+test("uniques use their own art, relics and Foulborn included, then fall back to the base", () => {
+  expect(artPath(poe1, item("Headhunter", "Leather Belt", "UNIQUE"))).toBe("Art/Headhunter.webp");
+  expect(artPath(poe1, item("Headhunter", "Leather Belt", "RELIC"))).toBe("Art/Headhunter.webp");
+  expect(artPath(poe1, item("Foulborn Headhunter", "Leather Belt", "UNIQUE"))).toBe("Art/Headhunter.webp");
+  expect(artPath(poe1, item("Unknown", "Leather Belt", "UNIQUE"))).toBe("Art/Belt.webp");
+  expect(artPath(poe1, item("Headhunter", "Leather Belt", "RARE"))).toBe("Art/Belt.webp");
 });
 
-test("PoB support names resolve to support art, including names shared with active gems", async () => {
-  const item = (name: string) => ({ game: "poe1" as const, name, baseName: name, rarity: null });
-  for (const name of ["Spell Echo", "Empower", "Added Cold Damage", "Awakened Added Cold Damage", "Barrage"]) {
-    const url = await itemArtUrl(item(name), true);
-    expect(url).toBeTruthy();
-    expect(url).toBe(await itemArtUrl(item(`${name} Support`)));
-  }
-  expect(await itemArtUrl(item("Barrage"), true)).not.toBe(await itemArtUrl(item("Barrage")));
-  expect(await itemArtUrl(item("Spell Echo Support"), true)).toBe(await itemArtUrl(item("Spell Echo"), true));
-  expect(await itemArtUrl(item("Missing Gem"), true)).toBeNull();
+test("PoB support gem names get the game's Support suffix", () => {
+  expect(artPath(poe1, item("Spell Echo", "Spell Echo"), true)).toBe("Art/SpellEcho.webp");
+  expect(artPath(poe1, item("Barrage", "Barrage"), true)).toBe("Art/BarrageSupport.webp");
+  expect(artPath(poe1, item("Barrage", "Barrage"))).toBe("Art/Barrage.webp");
 });
 
-test("unique art is game-specific, including relics and Foulborn variants", async () => {
-  const item = { game: "poe1" as const, name: "Headhunter", baseName: "Leather Belt", rarity: "UNIQUE" };
-  const poe1 = await itemArtUrl(item);
-  const poe2 = await itemArtUrl({ ...item, game: "poe2" });
-  expect(poe1).toContain("Headhunter");
-  expect(poe2).toBeTruthy();
-  expect(poe2).not.toBe(poe1);
-  expect(await itemArtUrl({ ...item, rarity: "RELIC" })).toBe(poe1);
-  expect(await itemArtUrl({ ...item, name: "Foulborn Headhunter" })).toBe(poe1);
-});
-
-test("crafted items use their base, and missing uniques fall back to base art", async () => {
-  const item = { game: "poe1" as const, name: "Headhunter", baseName: "Leather Belt", rarity: "RARE" };
-  const base = await itemArtUrl(item);
-  expect(base).toBeTruthy();
-  expect(base).not.toBe(await itemArtUrl({ ...item, rarity: "UNIQUE" }));
-  expect(await itemArtUrl({ ...item, name: "Unknown unique", rarity: "UNIQUE" })).toBe(base);
-  expect(await itemArtUrl({ ...item, baseName: "Leather Belt (legacy)" })).toBe(base);
-  expect(await itemArtUrl({ ...item, baseName: "Unknown base" })).toBeNull();
-  expect(await itemArtUrl({ ...item, baseName: "constructor" })).toBeNull();
+test("PoB variant suffixes are stripped and unknown names have no art", () => {
+  expect(artPath(poe1, item(null, "Leather Belt (legacy)"))).toBe("Art/Belt.webp");
+  expect(artPath(poe1, item(null, "Unknown base"))).toBeNull();
+  expect(artPath(poe1, item(null, "constructor"))).toBeNull();
 });

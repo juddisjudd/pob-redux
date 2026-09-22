@@ -1161,6 +1161,5 @@
   "chat_paused_steps": "Paused after {steps} tool steps without finishing.",
   "items_empty_slot": "Empty",
   "items_equipment_hint": "Hover to inspect · Click to edit",
-  "items_show_sockets": "Sockets & gems",
   "items_assigned_gems": "Assigned gems"
 }

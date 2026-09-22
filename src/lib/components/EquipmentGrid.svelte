@@ -2,14 +2,8 @@
   import type { ItemInfo, SlotInfo, SocketGroup } from "$lib/engine.svelte";
   import { socketedGems, equipmentArea, socketPosition, visibleEquipment } from "$lib/equipment";
   import { m } from "$lib/paraglide/messages";
+  import { socketArtUrls } from "$lib/item-art";
   import ItemIcon from "./ItemIcon.svelte";
-  import socketRed from "@scalpel/item-data/sockets/socket-red.png";
-  import socketGreen from "@scalpel/item-data/sockets/socket-green.png";
-  import socketBlue from "@scalpel/item-data/sockets/socket-blue.png";
-  import socketWhite from "@scalpel/item-data/sockets/socket-colorless.png";
-  import socketAbyss from "@scalpel/item-data/sockets/socket-abyss.png";
-  import socketLink from "@scalpel/item-data/sockets/socket-link.png";
-  import socketRune from "@scalpel/item-data/sockets/socket-rune-poe2.png";
 
   let { slots, items, game, groups = [], selectedItem, onselect, onitemhover, ongemhover, onleave }:
     { slots: SlotInfo[]; items: ItemInfo[]; game: "poe1" | "poe2"; groups?: SocketGroup[]; selectedItem: number | null;
@@ -30,7 +24,17 @@
     });
   });
   const byId = $derived(new Map(items.map((item) => [item.id, item])));
-  const socketArt: Record<string, string> = { R: socketRed, G: socketGreen, B: socketBlue, W: socketWhite, A: socketAbyss };
+  let sockets = $state<Record<string, string>>({});
+  $effect(() => {
+    const current = game;
+    let live = true;
+    socketArtUrls(current).then((urls) => { if (live) sockets = urls; });
+    return () => { live = false; };
+  });
+  const socketArt = $derived<Record<string, string | undefined>>({ R: sockets.red, G: sockets.green, B: sockets.blue, W: sockets.white, A: sockets.abyss });
+  const socketWhite = $derived(sockets.white);
+  const socketLink = $derived(sockets.link);
+  const socketRune = $derived(sockets.empty);
   const rarity: Record<string, string> = { UNIQUE: "var(--c-unique)", RELIC: "var(--c-gem)", RARE: "var(--c-rare)", MAGIC: "var(--c-magic)" };
 </script>
 
@@ -95,7 +99,7 @@
           {#each item.runes as rune, index}
             {@const point = socketPosition(index, item.runes.length)}
             <span class="rune" style:grid-column={item.runes.length === 1 ? "1 / -1" : `${(point.x + 12) / 24}`}
-              style:grid-row={`${(point.y + 12) / 24}`} style:background-image={`url("${socketRune}")`} title={`${index + 1}: ${rune}`}>
+              style:grid-row={`${(point.y + 12) / 24}`} style:background-image={socketRune ? `url("${socketRune}")` : undefined} title={`${index + 1}: ${rune}`}>
               {#if rune !== "None"}
                 <span class="inset-art"><ItemIcon item={{ game, name: rune, baseName: rune, rarity: null }} fallback="◆" /></span>
               {/if}

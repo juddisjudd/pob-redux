@@ -17,7 +17,7 @@
 {#if src}
   {#key src}
     <div class="art" class:loaded>
-      <img src={src} alt="" referrerpolicy="no-referrer" onload={() => loaded = true} onerror={() => loaded = false} />
+      <img src={src} alt="" onload={() => loaded = true} onerror={() => loaded = false} />
     </div>
   {/key}
 {/if}

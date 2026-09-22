@@ -1,6 +1,7 @@
 use std::path::{Path, PathBuf};
 use std::time::UNIX_EPOCH;
 
+mod art;
 mod mcp;
 mod tools;
 mod library;
@@ -1210,6 +1211,7 @@ pub fn run() {
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_process::init())
         .register_uri_scheme_protocol("pobasset", serve_pob_asset)
+        .register_asynchronous_uri_scheme_protocol("pobart", art::serve)
         .setup(|app| {
             #[cfg(desktop)]
             app.handle().plugin(tauri_plugin_updater::Builder::new().build())?;
