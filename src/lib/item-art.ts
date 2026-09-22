@@ -32,6 +32,12 @@ export function artPath(map: ArtMap, item: ArtItem, supportGem = false): string 
   return null;
 }
 
+/** Game inventory art is exported at 5/3 of the size PoE displays it. */
+export function tooltipArtSize(naturalWidth: number, naturalHeight: number) {
+  const scale = 3 / 5;
+  return { width: Math.round(naturalWidth * scale), height: Math.round(naturalHeight * scale) };
+}
+
 const maps = new Map<Game, Promise<ArtMap | null>>();
 
 function artMap(game: Game): Promise<ArtMap | null> {
