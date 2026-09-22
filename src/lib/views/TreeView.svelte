@@ -849,14 +849,14 @@
           const jewel = S.sockets.get(n.id);
           if (jewel && isAlloc) {
             const art = socketArt(jewel.baseName, n.overlay?.alloc === "JewelSocketAltActive") ?? (jewel.title && A.has(jewel.title) ? jewel.title : jewel.baseName);
-            if (art) A.draw(ctx, art, sx, sy, n.size.overlay * scale, n.size.overlay * scale);
+            if (art) drawCircularAsset(ctx, A, art, sx, sy, n.size.overlay * scale);
           }
         }
       } else {
         if (drawIcons && n.size.base > 0) {
           const icon = iconFor(n, S, isAlloc);
           if (!isAlloc && !heat) ctx.globalAlpha *= 0.7;
-          A.draw(ctx, icon, sx, sy, n.size.base * scale, n.size.base * scale, !isAlloc && !heat);
+          drawCircularAsset(ctx, A, icon, sx, sy, n.size.base * scale, !isAlloc && !heat);
           ctx.globalAlpha = dimAsc ? 0.6 : 1;
         }
         const half = n.size.overlay * scale;
@@ -918,6 +918,16 @@
       ctx.lineWidth = Math.max(list[2] * 0.5, 0.7);
       ctx.stroke();
     }
+  }
+
+  /** Keep square sprite sheets inside the circular node frame. */
+  function drawCircularAsset(ctx: CanvasRenderingContext2D, store: AssetStore, name: string, cx: number, cy: number, radius: number, disabled = false) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+    ctx.clip();
+    store.draw(ctx, name, cx, cy, radius, radius, disabled);
+    ctx.restore();
   }
 
   // Only the hover highlight changes as the pointer moves, so it is painted
